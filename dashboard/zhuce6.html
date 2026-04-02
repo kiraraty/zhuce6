@@ -1,0 +1,1341 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>zhuce6 dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf6f0;
+  --bg2: #f3ece2;
+  --card: #fffcf7;
+  --card-hover: #f9f3ea;
+  --border: #e8dcc8;
+  --text: #3d3427;
+  --muted: #9a8a72;
+  --accent: #c07a38;
+  --accent2: #a86528;
+  --good: #3a8f5c;
+  --good-bg: rgba(58,143,92,.1);
+  --warn: #c08b2e;
+  --warn-bg: rgba(192,139,46,.12);
+  --bad: #c0503a;
+  --bad-bg: rgba(192,80,58,.1);
+  --radius: 14px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: radial-gradient(ellipse at top right, rgba(198,146,74,.08), transparent 50%), linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
+  color: var(--text);
+  font: 13px/1.5 'Inter', -apple-system, sans-serif;
+  min-height: 100vh;
+}
+
+/* Layout */
+.page { max-width: 1520px; margin: 0 auto; padding: 18px; }
+.app-shell { display: grid; grid-template-columns: 176px minmax(0, 1fr); gap: 14px; align-items: start; }
+.nav-shell {
+  position: sticky; top: 20px;
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 12px 10px; box-shadow: 0 2px 12px rgba(120,80,30,.06);
+}
+.nav-title { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; padding: 0 6px; }
+.nav-list { display: grid; gap: 6px; }
+.nav-btn {
+  width: 100%; text-align: left; border: 1px solid transparent; border-radius: 10px;
+  background: transparent; color: var(--text); padding: 9px 10px; cursor: pointer;
+  font: inherit; transition: .15s;
+}
+.nav-btn:hover { background: rgba(192,122,56,.06); border-color: rgba(192,122,56,.12); }
+.nav-btn.active { background: rgba(192,122,56,.12); border-color: rgba(192,122,56,.25); color: var(--accent2); }
+.nav-label { font-size: 11px; font-weight: 700; }
+.nav-sub { font-size: 9px; color: var(--muted); margin-top: 2px; line-height: 1.25; }
+.content-stack { display: grid; gap: 16px; min-width: 0; }
+.view-panel { display: none; gap: 16px; }
+.view-panel.active { display: grid; }
+.stack { display: grid; gap: 16px; }
+.two-col { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(280px, .9fr); gap: 16px; }
+
+/* Header */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; margin-bottom: 20px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.header h1 { font-size: 18px; font-weight: 700; letter-spacing: -.02em; }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.pulse {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  background: var(--good); box-shadow: 0 0 6px rgba(58,143,92,.4);
+  animation: pulse 2s infinite;
+}
+.pulse.bad { background: var(--bad); box-shadow: 0 0 6px rgba(192,80,58,.4); }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+#status-text { font-size: 12px; font-weight: 600; color: var(--good); }
+#status-text.bad { color: var(--bad); }
+#updated { font-size: 11px; color: var(--muted); }
+.btn-manage {
+  padding: 6px 14px; font-size: 12px; font-weight: 600;
+  background: var(--accent); color: #fff; border: none; border-radius: 8px;
+  text-decoration: none; transition: .15s;
+}
+.btn-manage:hover { background: var(--accent2); }
+.btn-inline {
+  padding: 6px 12px; font-size: 11px; font-weight: 600;
+  background: rgba(192,122,56,.1); color: var(--accent2); border: 1px solid rgba(192,122,56,.2);
+  border-radius: 8px; cursor: pointer; transition: .15s;
+}
+.btn-inline:hover { background: rgba(192,122,56,.16); }
+.btn-inline:disabled { opacity: .6; cursor: default; }
+.hero-card { box-shadow: 0 2px 12px rgba(120,80,30,.06); }
+.section { box-shadow: 0 2px 12px rgba(120,80,30,.06); }
+
+/* Hero metrics */
+.hero { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
+.hero-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px 18px;
+  position: relative; overflow: hidden;
+}
+.hero-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+}
+.hero-card.c-green::before { background: linear-gradient(90deg, #3a8f5c, #5cb87a); }
+.hero-card.c-blue::before { background: linear-gradient(90deg, #c07a38, #d4944f); }
+.hero-card.c-purple::before { background: linear-gradient(90deg, #8b6f4e, #a68a64); }
+.hero-card.c-amber::before { background: linear-gradient(90deg, #c08b2e, #d4a24a); }
+.hero-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.hero-value { font-size: 28px; font-weight: 700; margin-top: 4px; letter-spacing: -.03em; }
+.hero-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+/* Main grid */
+.main { display: grid; grid-template-columns: 1fr 340px; gap: 16px; }
+
+/* Section cards */
+.section {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px; border-bottom: 1px solid var(--border);
+}
+.section-title { font-size: 13px; font-weight: 700; }
+.section-meta { font-size: 11px; color: var(--muted); }
+.section-body { padding: 14px 18px; }
+
+/* Failure analysis */
+.fail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.fail-bar-wrap { margin-bottom: 8px; }
+.fail-bar-label { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
+.fail-bar-label .name { color: var(--text); font-weight: 500; }
+.fail-bar-label .count { color: var(--muted); }
+.fail-bar { height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; }
+.fail-bar-fill { height: 100%; border-radius: 3px; background: var(--bad); transition: width .3s; }
+
+/* Task cards */
+.tasks { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.task-card {
+  padding: 12px 14px; background: var(--bg2);
+  border: 1px solid var(--border); border-radius: 10px; min-width: 0;
+}
+.task-name { font-size: 12px; font-weight: 700; text-transform: uppercase; }
+.task-status { display: inline-block; margin-top: 4px; padding: 2px 8px; font-size: 10px; font-weight: 700; border-radius: 6px; text-transform: uppercase; }
+.task-status.running { background: var(--good-bg); color: var(--good); }
+.task-status.idle { background: rgba(107,113,148,.15); color: var(--muted); }
+.task-status.error { background: var(--bad-bg); color: var(--bad); }
+.task-stats { margin-top: 8px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 8px; font-size: 11px; color: var(--muted); }
+.task-stats span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Activity stream table */
+.stream { max-height: 320px; overflow-y: auto; }
+.stream::-webkit-scrollbar { width: 4px; }
+.stream::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th { padding: 8px 12px; text-align: left; font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--card); }
+td { padding: 7px 12px; border-bottom: 1px solid rgba(232,220,200,.5); vertical-align: middle; }
+tr:hover td { background: rgba(192,122,56,.04); }
+.mono { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; }
+
+/* Badges */
+.badge { display: inline-block; padding: 2px 8px; font-size: 10px; font-weight: 700; border-radius: 6px; }
+.badge-ok { background: var(--good-bg); color: var(--good); }
+.badge-fail { background: var(--bad-bg); color: var(--bad); }
+.badge-warn { background: var(--warn-bg); color: var(--warn); }
+
+/* Sidebar */
+.sidebar { display: flex; flex-direction: column; gap: 16px; }
+.proxy-list { max-height: 400px; overflow-y: auto; }
+.proxy-list::-webkit-scrollbar { width: 4px; }
+.proxy-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.proxy-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0; border-bottom: 1px solid rgba(232,220,200,.4);
+}
+.proxy-item:last-child { border: none; }
+.proxy-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.proxy-dot.active { background: var(--good); }
+.proxy-dot.idle { background: var(--warn); }
+.proxy-dot.disabled { background: var(--bad); }
+.proxy-name { font-size: 12px; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.proxy-bar { width: 60px; height: 4px; background: var(--bg); border-radius: 2px; overflow: hidden; flex-shrink: 0; }
+.proxy-bar-fill { height: 100%; background: var(--good); border-radius: 2px; }
+.proxy-ratio { font-size: 10px; color: var(--muted); width: 40px; text-align: right; flex-shrink: 0; }
+
+/* File list */
+.file-item { padding: 8px 0; border-bottom: 1px solid rgba(232,220,200,.4); }
+.file-item:last-child { border: none; }
+.file-name { font-size: 12px; font-weight: 500; word-break: break-all; }
+.file-meta { font-size: 10px; color: var(--muted); margin-top: 2px; }
+.mini-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; align-items: stretch; }
+.mini-grid > * { min-width: 0; }
+.mini-card {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 10px 12px; min-width: 0; overflow: hidden;
+}
+.mini-label {
+  font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mini-value {
+  font-size: clamp(18px, 1.8vw, 20px); font-weight: 700; margin-top: 3px; letter-spacing: -.02em;
+  line-height: 1.18; min-width: 0; max-width: 100%; overflow-wrap: anywhere; word-break: break-word;
+}
+.mini-sub {
+  font-size: 10px; color: var(--muted); margin-top: 2px;
+  min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.compact-list { display: grid; gap: 8px; }
+.compact-item {
+  padding: 8px 10px; border: 1px solid rgba(232,220,200,.55); border-radius: 10px; background: rgba(243,236,226,.55);
+}
+.compact-item .line1 { font-size: 11px; font-weight: 600; color: var(--text); }
+.compact-item .line2 { font-size: 10px; color: var(--muted); margin-top: 2px; }
+.kv-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; }
+.kv-item { padding: 8px 0; border-bottom: 1px solid rgba(232,220,200,.4); }
+.kv-item:nth-last-child(-n+2) { border-bottom: none; }
+.kv-key { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.kv-val { font-size: 12px; color: var(--text); margin-top: 2px; word-break: break-all; }
+.compact-scroll { max-height: 320px; overflow-y: auto; padding-right: 4px; }
+.compact-scroll::-webkit-scrollbar { width: 4px; }
+.compact-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.domain-banner {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 12px;
+  padding: 12px 14px; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
+  min-width: 0; overflow: hidden;
+}
+.domain-name {
+  font-size: 14px; font-weight: 700; color: var(--accent2);
+  min-width: 0; max-width: 100%; line-height: 1.25; overflow-wrap: anywhere; word-break: break-word;
+}
+.domain-meta {
+  font-size: 11px; color: var(--muted);
+  min-width: 0; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Alert */
+.alert { display: none; padding: 12px 16px; margin-bottom: 16px; background: var(--bad-bg); border: 1px solid rgba(248,113,113,.2); border-radius: var(--radius); color: var(--bad); font-size: 12px; }
+
+/* Empty state */
+.empty { padding: 20px; text-align: center; color: var(--muted); font-size: 12px; }
+.settings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.settings-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: 0 2px 12px rgba(120,80,30,.06); overflow: hidden;
+}
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.field { display: grid; gap: 6px; }
+.field.full { grid-column: 1 / -1; }
+.field label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.input, .textarea {
+  width: 100%; background: var(--bg2); color: var(--text); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 12px; font: inherit;
+}
+.textarea { min-height: 108px; resize: vertical; }
+.control-row, .settings-actions, .settings-status-row {
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+}
+.btn-danger {
+  background: rgba(192,80,58,.12); color: var(--bad); border-color: rgba(192,80,58,.2);
+}
+.btn-danger:hover { background: rgba(192,80,58,.18); }
+.status-pill {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
+  border-radius: 999px; font-size: 11px; font-weight: 700;
+}
+.status-pill.ok { background: var(--good-bg); color: var(--good); }
+.status-pill.warn { background: var(--warn-bg); color: var(--warn); }
+.status-pill.error { background: var(--bad-bg); color: var(--bad); }
+.status-pill::before {
+  content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor;
+}
+.settings-feedback {
+  display: none; padding: 10px 12px; border-radius: 10px; font-size: 12px; border: 1px solid transparent;
+}
+.settings-feedback.ok { display: block; background: var(--good-bg); color: var(--good); border-color: rgba(58,143,92,.18); }
+.settings-feedback.error { display: block; background: var(--bad-bg); color: var(--bad); border-color: rgba(192,80,58,.18); }
+.dep-grid { display: grid; gap: 10px; }
+.dep-item {
+  display: flex; justify-content: space-between; gap: 12px; align-items: center;
+  padding: 10px 12px; background: rgba(243,236,226,.55); border: 1px solid rgba(232,220,200,.55); border-radius: 10px;
+}
+.dep-copy { min-width: 0; }
+.dep-copy strong { display: block; font-size: 12px; }
+.dep-copy span { display: block; font-size: 10px; color: var(--muted); margin-top: 2px; word-break: break-word; }
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .app-shell { grid-template-columns: 1fr; }
+  .nav-shell { position: static; }
+  .hero { grid-template-columns: repeat(3, 1fr); }
+  .main { grid-template-columns: 1fr; }
+  .tasks { grid-template-columns: repeat(3, 1fr); }
+  .mini-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .two-col { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .hero { grid-template-columns: 1fr; }
+  .tasks { grid-template-columns: 1fr; }
+  .fail-grid { grid-template-columns: 1fr; }
+  .mini-grid { grid-template-columns: 1fr; }
+  .kv-grid { grid-template-columns: 1fr; }
+  .settings-grid { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+  .page { padding: 12px; }
+  .nav-btn { padding: 9px 10px; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <!-- Header -->
+  <header class="header">
+    <div>
+      <h1>zhuce6 Monitor</h1>
+      <div id="updated" style="margin-top:2px">加载中...</div>
+    </div>
+    <div class="header-right">
+      <div id="pulse" class="pulse"></div>
+      <span id="status-text">LOADING</span>
+      <a id="btn-cpa-manage" class="btn-manage" data-cpa-only href="#" target="_blank" rel="noopener noreferrer">CPA 管理</a>
+
+    </div>
+  </header>
+
+  <!-- Alert -->
+  <div id="alert" class="alert"></div>
+
+  <!-- Hero Metrics -->
+  <div class="app-shell">
+    <aside class="nav-shell">
+      <div class="nav-title">Quick Views</div>
+      <div class="nav-list" id="nav-list">
+        <button class="nav-btn active" data-view="overview">
+          <div class="nav-label">总览</div>
+          <div class="nav-sub">状态, 任务, 总体 KPI</div>
+        </button>
+        <button class="nav-btn" data-view="active-domain">
+          <div class="nav-label">当前活跃域</div>
+          <div class="nav-sub">只看当前域故障与成功</div>
+        </button>
+        <button class="nav-btn" data-view="cumulative">
+          <div class="nav-label">启动至今</div>
+          <div class="nav-sub">累计分析与全量流水</div>
+        </button>
+        <button class="nav-btn" data-view="rotate" data-cpa-only>
+          <div class="nav-label">Rotate / CPA 401</div>
+          <div class="nav-sub">主池轮换与清理</div>
+        </button>
+        <button class="nav-btn" data-view="proxy">
+          <div class="nav-label">代理池</div>
+          <div class="nav-sub">节点状态与成功率</div>
+        </button>
+        <button class="nav-btn" data-view="storage">
+          <div class="nav-label">写盘 / 成功</div>
+          <div class="nav-sub">写盘记录与成功账号</div>
+        </button>
+        <button class="nav-btn" data-view="survival">
+          <div class="nav-label">存活实验</div>
+          <div class="nav-sub">固定 cohort 401 存活时长</div>
+        </button>
+      </div>
+    </aside>
+
+    <div class="content-stack">
+      <section id="overview-view" class="view-panel active">
+        <div id="hero" class="hero"></div>
+        <div class="two-col">
+          <div class="stack">
+            <section class="section">
+              <div class="section-head">
+                <div class="section-title">⚡ 任务状态</div>
+                <div class="section-meta" id="task-meta">-</div>
+              </div>
+              <div class="section-body">
+                <div id="tasks" class="tasks"></div>
+              </div>
+            </section>
+            <section class="section">
+              <div class="section-head">
+                <div class="section-title">📊 启动至今故障分析</div>
+                <div class="section-meta" id="overview-fail-meta">-</div>
+              </div>
+              <div class="section-body">
+                <div class="fail-grid" id="overview-fail-grid"></div>
+              </div>
+            </section>
+          </div>
+          <div class="stack">
+            <section class="section">
+              <div class="section-head">
+                <div class="section-title">🧭 当前活跃域</div>
+                <div class="section-meta" id="active-domain-meta">-</div>
+              </div>
+              <div class="section-body">
+                <div class="domain-banner">
+                  <div id="active-domain-name" class="domain-name">-</div>
+                  <div id="active-domain-sub" class="domain-meta">-</div>
+                </div>
+                <div id="active-domain-kpis" class="mini-grid" style="margin-top:12px"></div>
+              </div>
+            </section>
+            <section class="section">
+              <div class="section-head">
+                <div class="section-title">⚙️ 当前运行配置</div>
+                <div class="section-meta" id="cfg-meta">-</div>
+              </div>
+              <div class="section-body">
+                <div id="cfg-wrap" class="kv-grid"></div>
+              </div>
+            </section>
+            <section class="section">
+              <div class="section-head">
+                <div class="section-title">🗓️ 批次补号策略</div>
+                <div class="section-meta" id="plan-meta">-</div>
+              </div>
+              <div class="section-body">
+                <div id="plan-wrap" class="mini-grid"></div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section id="active-domain-view" class="view-panel">
+        <div class="stack">
+          <section class="section">
+            <div class="section-head">
+              <div class="section-title">🧭 当前活跃域故障分析</div>
+              <div class="section-meta" id="fail-meta">-</div>
+            </div>
+            <div class="section-body">
+              <div class="domain-banner">
+                <div id="active-fail-domain-name" class="domain-name">-</div>
+                <div id="active-fail-domain-sub" class="domain-meta">-</div>
+              </div>
+              <div class="fail-grid" id="fail-grid" style="margin-top:12px"></div>
+            </div>
+          </section>
+          <section class="section">
+            <div class="section-head">
+              <div class="section-title">📋 当前活跃域最近记录</div>
+              <div class="section-meta" id="stream-meta">-</div>
+            </div>
+            <div class="stream" id="stream-wrap"></div>
+          </section>
+          <section class="section">
+            <div class="section-head">
+              <div class="section-title">✅ 当前活跃域成功记录</div>
+              <div class="section-meta" id="success-meta">-</div>
+            </div>
+            <div class="section-body compact-scroll" id="success-wrap"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="cumulative-view" class="view-panel">
+        <div class="stack">
+          <section class="section">
+            <div class="section-head">
+              <div class="section-title">📈 启动至今累计故障分析</div>
+              <div class="section-meta" id="cumulative-meta">-</div>
+            </div>
+            <div class="section-body">
+              <div id="cumulative-grid" class="mini-grid"></div>
+              <div class="fail-grid" id="cumulative-fail-grid" style="margin-top:12px"></div>
+            </div>
+          </section>
+          <section class="section">
+            <div class="section-head">
+              <div class="section-title">📚 启动至今最近流水</div>
+              <div class="section-meta" id="cumulative-stream-meta">-</div>
+            </div>
+            <div class="stream" id="cumulative-stream-wrap"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="rotate-view" class="view-panel">
+        <div class="stack">
+          <section class="section">
+            <div class="section-head">
+              <div class="section-title">🔁 Rotate / CPA 401</div>
+              <div class="section-meta" id="rotate-meta">-</div>
+            </div>
+            <div class="section-body">
+              <div id="rotate-grid" class="mini-grid"></div>
+              <div id="rotate-log-wrap" class="compact-list"></div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="proxy-view" class="view-panel">
+        <div class="stack">
+          <section class="section">
+            <div class="section-head">
+              <div class="section-title">🌐 代理池</div>
+              <div class="section-meta" id="proxy-meta">-</div>
+            </div>
+            <div class="section-body">
+              <div id="proxy-wrap" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:4px 16px"></div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="storage-view" class="view-panel">
+        <div class="two-col">
+          <section class="section">
+            <div class="section-head">
+              <div class="section-title">💾 写盘记录</div>
+              <div class="section-meta" id="file-meta">-</div>
+            </div>
+            <div class="section-body compact-scroll" id="file-wrap"></div>
+          </section>
+          <section class="section">
+            <div class="section-head">
+              <div class="section-title">✅ 最近成功记录</div>
+              <div class="section-meta" id="storage-success-meta">-</div>
+            </div>
+            <div class="section-body compact-scroll" id="storage-success-wrap"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="survival-view" class="view-panel">
+        <div class="stack">
+          <section class="section">
+            <div class="section-head">
+              <div class="section-title">🧪 固定账户存活实验</div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <button id="survival-reseed-btn" class="btn-inline" type="button">重置为最近10个</button>
+                <div class="section-meta" id="survival-meta">-</div>
+              </div>
+            </div>
+            <div class="section-body">
+              <div id="survival-grid" class="mini-grid"></div>
+              <div id="survival-changes-wrap" class="compact-list" style="margin-top:12px"></div>
+            </div>
+          </section>
+          <section class="section">
+            <div class="section-head">
+              <div class="section-title">📋 固定 cohort 明细</div>
+              <div class="section-meta" id="survival-members-meta">-</div>
+            </div>
+            <div class="stream" id="survival-members-wrap"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="settings-view" class="view-panel">
+        <div class="stack">
+          <section class="settings-card">
+            <div class="section-head">
+              <div class="section-title">⚙️ Settings</div>
+              <div class="section-meta">当前模式 <span id="settings-mode">-</span></div>
+            </div>
+            <div class="section-body">
+              <div class="settings-feedback" id="settings-feedback"></div>
+              <div class="settings-grid" style="margin-top:12px">
+                <section class="settings-card">
+                  <div class="section-head">
+                    <div class="section-title">注册机控制</div>
+                    <div class="settings-status-row">
+                      <span id="settings-register-state" class="status-pill warn">已停止</span>
+                    </div>
+                  </div>
+                  <div class="section-body">
+                    <div class="control-row" style="margin-bottom:12px">
+                      <button class="btn-inline" type="button" data-register-action="start">启动</button>
+                      <button class="btn-inline btn-danger" type="button" data-register-action="stop">停止</button>
+                      <button class="btn-inline" type="button" data-register-action="restart">重启</button>
+                    </div>
+                    <div class="form-grid">
+                      <div class="field">
+                        <label for="settings-register-threads">线程数</label>
+                        <input id="settings-register-threads" class="input" type="number" min="1">
+                      </div>
+                      <div class="field">
+                        <label for="settings-register-provider">邮箱提供商</label>
+                        <input id="settings-register-provider" class="input" type="text">
+                      </div>
+                      <div class="field">
+                        <label for="settings-register-batch-target">批次目标</label>
+                        <input id="settings-register-batch-target" class="input" type="number" min="1">
+                      </div>
+                      <div class="field">
+                        <label for="settings-register-batch-interval">批次间隔(秒)</label>
+                        <input id="settings-register-batch-interval" class="input" type="number" min="60">
+                      </div>
+                      <div class="field full">
+                        <label for="settings-register-proxy">注册代理</label>
+                        <input id="settings-register-proxy" class="input" type="text">
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="settings-card">
+                  <div class="section-head">
+                    <div class="section-title">代理池</div>
+                    <div class="section-meta" id="settings-proxy-meta">-</div>
+                  </div>
+                  <div class="section-body">
+                    <div class="form-grid">
+                      <div class="field full">
+                        <label for="settings-proxy-direct-urls">代理 URL 列表</label>
+                        <textarea id="settings-proxy-direct-urls" class="textarea"></textarea>
+                      </div>
+                      <div class="field">
+                        <label for="settings-proxy-size">池大小</label>
+                        <input id="settings-proxy-size" class="input" type="number" min="1">
+                      </div>
+                      <div class="field">
+                        <label for="settings-proxy-regions">优先地区</label>
+                        <input id="settings-proxy-regions" class="input" type="text">
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="settings-card">
+                  <div class="section-head">
+                    <div class="section-title">cfmail</div>
+                    <div class="section-meta" id="settings-cfmail-meta">-</div>
+                  </div>
+                  <div class="section-body">
+                    <div id="settings-cfmail-grid" class="kv-grid"></div>
+                  </div>
+                </section>
+
+                <section class="settings-card" data-cpa-only>
+                  <div class="section-head">
+                    <div class="section-title">CPA / 主池</div>
+                    <div class="section-meta" id="settings-cpa-meta">-</div>
+                  </div>
+                  <div class="section-body">
+                    <div class="form-grid">
+                      <div class="field">
+                        <label for="settings-cpa-main-pool-target">主池目标</label>
+                        <input id="settings-cpa-main-pool-target" class="input" type="number" min="1">
+                      </div>
+                      <div class="field">
+                        <label for="settings-cpa-rotate-interval">Rotate 间隔(秒)</label>
+                        <input id="settings-cpa-rotate-interval" class="input" type="number" min="1">
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              <section class="settings-card" style="margin-top:16px">
+                <div class="section-head">
+                  <div class="section-title">依赖状态</div>
+                  <div class="section-meta">每 30s 自动刷新</div>
+                </div>
+                <div class="section-body">
+                  <div class="dep-grid">
+                    <div class="dep-item">
+                      <div class="dep-copy"><strong>cfmail</strong><span id="dep-cfmail-detail">-</span></div>
+                      <div id="dep-cfmail-status" class="status-pill warn">未加载</div>
+                    </div>
+                    <div class="dep-item">
+                      <div class="dep-copy"><strong>代理池</strong><span id="dep-proxy-detail">-</span></div>
+                      <div id="dep-proxy-status" class="status-pill warn">未加载</div>
+                    </div>
+                    <div class="dep-item" data-cpa-only>
+                      <div class="dep-copy"><strong>CPA</strong><span id="dep-cpa-detail">-</span></div>
+                      <div id="dep-cpa-status" class="status-pill warn">未加载</div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <div class="settings-actions" style="margin-top:16px">
+                <button id="settings-save-btn" class="btn-inline" type="button">保存配置</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(()=>{
+const $=s=>document.getElementById(s);
+const esc=s=>String(s??"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+const num=v=>Number.isFinite(+v)?(+v).toLocaleString("zh-CN"):"-";
+const pct=v=>Number.isFinite(+v)?v+"%":"-";
+const compact=v=>{const n=+v;if(!Number.isFinite(n))return"-";if(n>=1e9)return(n/1e9).toFixed(1)+"B";if(n>=1e6)return(n/1e6).toFixed(1)+"M";if(n>=1e4)return(n/1e3).toFixed(0)+"K";return n.toLocaleString("zh-CN")};
+const dt=v=>{if(!v)return"-";const d=new Date(v);return isNaN(+d)?String(v):d.toLocaleString("zh-CN",{hour12:false})};
+const ago=v=>{if(!v)return"-";const s=Math.max(0,Math.round((Date.now()-new Date(v))/1000));if(!Number.isFinite(s))return"-";if(s<60)return s+"s";if(s<3600)return Math.floor(s/60)+"m";return Math.floor(s/3600)+"h"};
+const nameMap={register:"注册循环",cleanup:"池清理",validate:"额度验证",rotate:"主池轮换",account_survival:"存活实验"};
+const viewMap={
+  "overview":"overview-view",
+  "active-domain":"active-domain-view",
+  "cumulative":"cumulative-view",
+  "rotate":"rotate-view",
+  "proxy":"proxy-view",
+  "storage":"storage-view",
+  "survival":"survival-view",
+};
+let busy=0, settingsBusy=0, lastErr="";
+let latestSummary=null, latestSettings=null, latestDependencies=null;
+
+async function fetchJson(url){
+  const ctl=new AbortController();
+  const t=setTimeout(()=>ctl.abort(),15000);
+  try{
+    const r=await fetch(url,{cache:"no-store",signal:ctl.signal});
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    return await r.json();
+  }finally{
+    clearTimeout(t);
+  }
+}
+
+async function grab(){
+  return fetchJson(`${location.origin}/api/summary`);
+}
+
+function heroCard(label, value, sub, colorClass){
+  return `<div class="hero-card ${colorClass}">
+    <div class="hero-label">${label}</div>
+    <div class="hero-value">${value}</div>
+    <div class="hero-sub">${sub}</div>
+  </div>`;
+}
+
+function currentHashView(){
+  const raw=String(location.hash||"").replace(/^#/,"").trim();
+  return viewMap[raw]?raw:"overview";
+}
+
+function setActiveView(view,{updateHash=true}={}){
+  const normalized=viewMap[view]?view:"overview";
+  document.querySelectorAll(".nav-btn").forEach(btn=>{
+    btn.classList.toggle("active", btn.dataset.view===normalized);
+  });
+  Object.entries(viewMap).forEach(([key,id])=>{
+    const el=$(id);
+    if(el) el.classList.toggle("active", key===normalized);
+  });
+  if(updateHash){
+    const nextHash=`#${normalized}`;
+    if(location.hash!==nextHash){
+      history.replaceState(null,"",nextHash);
+    }
+  }
+}
+
+function statusTone(status){
+  const normalized=String(status||"").toLowerCase();
+  if(normalized==="ok" || normalized==="started" || normalized==="running" || normalized==="已运行" || normalized==="运行中") return "ok";
+  if(normalized==="error" || normalized==="stopped" || normalized==="已停止") return "error";
+  return "warn";
+}
+
+function setStatusPill(id, text, tone){
+  const el=$(id);
+  if(!el) return;
+  el.textContent=text;
+  el.className=`status-pill ${tone||statusTone(text)}`;
+}
+
+function applyModeVisibility(mode){
+  const lite=String(mode||"").toLowerCase()==="lite";
+  document.querySelectorAll("[data-cpa-only]").forEach(el=>{
+    el.style.display=lite?"none":"";
+  });
+  if(lite && currentHashView()==="rotate"){
+    setActiveView("overview");
+  }
+}
+
+function showSettingsFeedback(message, tone="ok"){
+  const el=$("settings-feedback");
+  if(!el) return;
+  if(!message){
+    el.textContent="";
+    el.className="settings-feedback";
+    return;
+  }
+  el.textContent=message;
+  el.className=`settings-feedback ${tone}`;
+}
+
+function render(d){
+  const rt=d.runtime||{}, ra=d.regular_accounts||{}, pp=rt.proxy_pool||{};
+  const tasks=rt.task_states||d.task_states||[];
+  const mode=String((latestSettings&&latestSettings.mode)||rt.runtime_mode||"full");
+  const isLite=mode==="lite";
+  const files=d.recent_pool_files||[];
+  const reg=tasks.find(t=>t.name==="register")||{};
+  const rotateTask=d.rotate_task||tasks.find(t=>t.name==="rotate")||{};
+  const rotateLog=d.rotate_log_tail||{};
+  const rotateLiveSummary=d.rotate_current_summary||rotateLog.current_summary||{};
+  const rotateLatestSummary=d.rotate_latest_summary||rotateLog.latest_summary||{};
+  const rotateSummary=(rotateTask.is_running&&Object.keys(rotateLiveSummary).length)?rotateLiveSummary:rotateLatestSummary;
+  const runtimeState=d.runtime_state_file||{};
+  const burstPlan=d.register_burst_plan||{};
+  const survival=d.account_survival||{};
+  const survivalSummary=survival.summary||{};
+  const survivalMembers=Array.isArray(survival.members)?survival.members:[];
+  const survivalChanges=Array.isArray(survival.changes)?survival.changes:[];
+  const stoploss=d.register_cfmail_add_phone_stoploss||{};
+  const activeDomain=((reg.cfmail_rotation||{}).active_domain||stoploss.active_domain||"").trim();
+  const attempts=d.register_recent_attempts||d.recent_attempts||[];
+  const activeAttempts=(reg.active_domain_recent_attempts&&reg.active_domain_recent_attempts.length)
+    ? reg.active_domain_recent_attempts
+    : (activeDomain ? attempts.filter(a=>(a.email_domain||"")===activeDomain) : attempts);
+  const activeFailStage=(activeDomain ? (reg.active_domain_failure_by_stage||{}) : (reg.failure_by_stage||{}));
+  const activeFailSignal=(activeDomain ? (reg.active_domain_failure_signals||{}) : (reg.failure_signals||{}));
+  const activeFailHotspots=(activeDomain ? (reg.active_domain_recent_failure_hotspots||[]) : (reg.recent_failure_hotspots||[]));
+  const cumulativeFailStage=reg.failure_by_stage||{};
+  const cumulativeFailSignal=reg.failure_signals||{};
+  applyModeVisibility(mode);
+
+  // Status
+  const regScheduled=String(reg.status||"").toLowerCase()==="scheduled";
+  const ok=(reg.is_running && reg.status==="running") || regScheduled;
+  $("pulse").className="pulse"+(ok?"":" bad");
+  $("status-text").textContent=regScheduled?"SCHEDULED":(ok?"RUNNING":"ATTENTION");
+  $("status-text").className="status-text"+(ok?"":" bad");
+  $("updated").textContent=`更新: ${dt(d.generated_at)} · provider: ${esc(reg.mail_provider||"-")} · ${num(reg.threads_alive||0)}/${num(reg.threads_total||0)} 线程`;
+
+  // Hide alert on success
+  $("alert").style.display="none";
+
+  // Hero metrics
+  const registeredSuccess=Number.isFinite(+d.registered_success_total)?+d.registered_success_total:(Number.isFinite(+reg.total_success_registered)?+reg.total_success_registered:+(reg.total_success||0));
+  const registeredRate=reg.total_attempts>0?((registeredSuccess/reg.total_attempts)*100).toFixed(1):0;
+  const activeSuccessCount=activeAttempts.filter(a=>a.success).length;
+  const activeAttemptCount=activeAttempts.length;
+  const activeSuccessRate=activeAttemptCount>0?((activeSuccessCount/activeAttemptCount)*100).toFixed(1):null;
+  const mins=reg.last_started_at?Math.max(1,(Date.now()-new Date(reg.last_started_at))/60000):0;
+  const speed=mins>0&&registeredSuccess>0?(registeredSuccess/mins).toFixed(1):"-";
+  const heroCards=[
+    heroCard("累计尝试 / 成功", `${num(reg.total_attempts||0)} / ${num(registeredSuccess)}`, `速度 ${speed}/min · 成功率 ${pct(registeredRate)}`, "c-green"),
+  ];
+  heroCards.push(
+    heroCard("当前活动域窗口成功率", activeSuccessRate===null?"-":pct(activeSuccessRate), activeDomain?`${esc(activeDomain)} · 最近窗口样本 ${num(activeAttemptCount)}`:"等待域名数据", "c-blue"),
+  );
+  if(!isLite){
+    heroCards.push(
+      heroCard("主池", `${num(d.cpa_count)}`, `本地 Pool ${num(d.pool_count)}`, "c-blue"),
+      heroCard("可用 Tokens", compact((d.tokens||{}).available_now), `单号 ${compact((d.tokens||{}).per_account)} · ${num((d.tokens||{}).relevant_accounts)} 号`, "c-purple"),
+      heroCard("可用 / 失效", `${num(ra.available)} / ${num(ra.invalid)}`, `待重置 ${num(d.observed_loss)}`, "c-amber"),
+    );
+  }else{
+    heroCards.push(
+      heroCard("主池", num(d.cpa_count), `本地 Pool ${num(d.pool_count)}`, "c-blue"),
+      heroCard("代理池", num(pp.node_count||0), `${num(pp.in_use_count||0)} 使用中`, "c-purple"),
+    );
+  }
+  heroCards.push(heroCard("今日新增", num(d.today_new), `本地 Pool ${num(d.pool_count)}`, "c-green"));
+  $("hero").innerHTML=heroCards.join("");
+
+  function failBars(obj, total){
+    return Object.entries(obj).sort((a,b)=>b[1]-a[1]).map(([k,v])=>{
+      const w=Math.round((v/total)*100);
+      return `<div class="fail-bar-wrap">
+        <div class="fail-bar-label"><span class="name">${esc(k)}</span><span class="count">${num(v)} (${w}%)</span></div>
+        <div class="fail-bar"><div class="fail-bar-fill" style="width:${w}%"></div></div>
+      </div>`;
+    }).join("");
+  }
+  function attemptTable(rows){
+    if(!rows.length) return '<div class="empty">暂无记录</div>';
+    return `<table><thead><tr>
+      <th>时间</th><th>阶段</th><th>信号</th><th>代理</th><th>域名</th>
+    </tr></thead><tbody>${rows.map(a=>{
+      const bc=a.success?"badge-ok":"badge-fail";
+      const sig=a.signal||a.create_account_error_code||(a.success?"✅":"FAIL");
+      return `<tr>
+        <td class="mono">${dt(a.timestamp).split(" ").pop()||"-"}</td>
+        <td><span class="badge ${bc}">${esc(a.stage||"-")}</span></td>
+        <td style="font-size:11px">${esc(sig)}</td>
+        <td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(a.proxy_key||"direct")}</td>
+        <td class="mono" style="font-size:10px;color:var(--muted)">${esc(a.email_domain||"-")}</td>
+      </tr>`;
+    }).join("")}</tbody></table>`;
+  }
+  function successList(rows){
+    if(!rows.length) return '<div class="empty">暂无成功记录</div>';
+    return rows.map(a=>`<div class="file-item">
+      <div class="file-name" style="color:var(--good)">✅ ${esc(a.email||a.email_domain||"-")}</div>
+      <div class="file-meta">${esc(a.proxy_key||"direct")} · ${dt(a.timestamp).split(" ").pop()||"-"}</div>
+    </div>`).join("");
+  }
+
+  // Active domain analysis
+  const activeFailCount=Object.values(activeFailStage).reduce((a,b)=>a+b,0);
+  const activeSigCount=Object.values(activeFailSignal).reduce((a,b)=>a+b,0);
+  const activeSuccesses=activeAttempts.filter(a=>a.success);
+  const activeVisibleAttempts=activeAttempts.slice(-40);
+  const activeVisibleSuccesses=activeSuccesses.slice(-24).reverse();
+  $("active-domain-name").textContent=activeDomain||"-";
+  $("active-domain-sub").textContent=activeDomain
+    ? `最近窗口 ${activeAttempts.length} 条域内记录 · 成功率 ${activeSuccessRate===null?"-":pct(activeSuccessRate)} · 失败 ${num(activeFailCount)}`
+    : "当前还没有可识别的活跃域";
+  $("active-domain-meta").textContent=activeDomain ? "仅看当前域" : "等待域名数据";
+  $("active-domain-kpis").innerHTML=[
+    heroMini("窗口成功率", activeSuccessRate===null?"-":pct(activeSuccessRate), `样本 ${num(activeAttempts.length)}`),
+    heroMini("窗口尝试", num(activeAttempts.length), `成功 ${num(activeSuccesses.length)}`),
+    heroMini("窗口失败", num(activeFailCount), `信号 ${num(activeSigCount)}`),
+    heroMini("最近成功", num(activeVisibleSuccesses.length), activeVisibleSuccesses[0]?.email||"-"),
+    heroMini("热点", activeFailHotspots[0]?.key||"-", activeFailHotspots[0]?`次数 ${num(activeFailHotspots[0].count)}`:"暂无"),
+    heroMini("最近记录", num(activeVisibleAttempts.length), activeDomain||"-"),
+    heroMini("轮换状态", ((reg.cfmail_rotation||{}).in_progress)?"进行中":"稳定", ((reg.cfmail_rotation||{}).last_reason)||"-"),
+  ].join("");
+  $("active-fail-domain-name").textContent=activeDomain||"-";
+  $("active-fail-domain-sub").textContent=activeDomain
+    ? `当前活跃域专属统计 · 最近 ${activeVisibleAttempts.length} 条`
+    : "暂无活跃域数据";
+  const activeFailTotal=Object.values(activeFailStage).reduce((a,b)=>a+b,0)||1;
+  const activeSigTotal=Object.values(activeFailSignal).reduce((a,b)=>a+b,0)||1;
+  $("fail-meta").textContent=activeDomain
+    ? `${esc(activeDomain)} · ${num(activeFailCount)} 次失败`
+    : `${num(reg.total_failure)} 次失败`;
+  $("fail-grid").innerHTML=`
+    <div><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px">按阶段</div>${failBars(activeFailStage,activeFailTotal)||'<div class="empty">暂无</div>'}</div>
+    <div><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px">按信号</div>${failBars(activeFailSignal,activeSigTotal)||'<div class="empty">暂无</div>'}</div>
+  `;
+  $("stream-meta").textContent=activeDomain
+    ? `${esc(activeDomain)} · 最近 ${activeVisibleAttempts.length} / ${activeAttempts.length} 条`
+    : `最近 ${activeVisibleAttempts.length} / ${attempts.length} 条`;
+  $("stream-wrap").innerHTML=attemptTable(activeVisibleAttempts);
+  $("success-meta").textContent=activeDomain
+    ? `${esc(activeDomain)} · ${activeVisibleSuccesses.length} / ${activeSuccesses.length} 条成功`
+    : `${activeVisibleSuccesses.length} / ${activeSuccesses.length} 条成功`;
+  $("success-wrap").innerHTML=successList(activeVisibleSuccesses);
+
+  // Cumulative analysis
+  const cumulativeFailCount=Object.values(cumulativeFailStage).reduce((a,b)=>a+b,0);
+  const cumulativeSigCount=Object.values(cumulativeFailSignal).reduce((a,b)=>a+b,0);
+  const cumulativeSuccesses=attempts.filter(a=>a.success);
+  const cumulativeVisibleAttempts=attempts.slice(-40);
+  const cumulativeFailTotal=Object.values(cumulativeFailStage).reduce((a,b)=>a+b,0)||1;
+  const cumulativeSigTotal=Object.values(cumulativeFailSignal).reduce((a,b)=>a+b,0)||1;
+  $("overview-fail-meta").textContent=`累计失败 ${num(cumulativeFailCount)} 次`;
+  $("overview-fail-grid").innerHTML=`
+    <div><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px">按阶段</div>${failBars(cumulativeFailStage,cumulativeFailTotal)||'<div class="empty">暂无</div>'}</div>
+    <div><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px">按信号</div>${failBars(cumulativeFailSignal,cumulativeSigTotal)||'<div class="empty">暂无</div>'}</div>
+  `;
+  $("cumulative-meta").textContent=`启动至今 ${num(reg.total_attempts||0)} 次尝试`;
+  $("cumulative-grid").innerHTML=[
+    heroMini("总尝试", num(reg.total_attempts||0), `注册成功 ${num(registeredSuccess)}`),
+    heroMini("总失败", num(reg.total_failure||0), `成功率 ${pct(registeredRate)}`),
+    heroMini("当前速度", speed==="-"?"-":`${speed}/min`, reg.last_started_at?`started ${dt(reg.last_started_at).split(" ").pop()||"-"}`:"-"),
+    heroMini("Pool 备份", num(d.pool_count), `CPA 主池 ${num(d.cpa_count)}`),
+    heroMini("当前活跃域", activeDomain||"-", ((reg.cfmail_rotation||{}).last_reason)||"-"),
+    heroMini("最近热点", (reg.recent_failure_hotspots||[])[0]?.key||"-", (reg.recent_failure_hotspots||[])[0]?`次数 ${num((reg.recent_failure_hotspots||[])[0].count)}`:"暂无"),
+  ].join("");
+  $("cumulative-fail-grid").innerHTML=`
+    <div><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px">按阶段</div>${failBars(cumulativeFailStage,cumulativeFailTotal)||'<div class="empty">暂无</div>'}</div>
+    <div><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px">按信号</div>${failBars(cumulativeFailSignal,cumulativeSigTotal)||'<div class="empty">暂无</div>'}</div>
+  `;
+  $("cumulative-stream-meta").textContent=`最近 ${cumulativeVisibleAttempts.length} / ${attempts.length} 条`;
+  $("cumulative-stream-wrap").innerHTML=attemptTable(cumulativeVisibleAttempts);
+
+  // Tasks
+  const ordered=(isLite?["register"]:["register","rotate","cleanup","validate","account_survival"]).map(n=>tasks.find(t=>t.name===n)||{name:n,status:"idle"});
+  $("task-meta").textContent=ordered.filter(t=>/running/i.test(t.status)).length+" 运行中";
+  $("tasks").innerHTML=ordered.map(t=>{
+    const sc=/running/i.test(t.status||"")?"running":/fail|error|stop/i.test(t.status||"")?"error":"idle";
+    const extra=t.name==="register"
+      ? ((t.next_run_at && !/running/i.test(t.status||"")) ? `下次 ${ago(t.next_run_at)}` : `线程 ${num(t.threads_alive)}/${num(t.threads_total)}`)
+      : (t.next_run_at?`下次 ${ago(t.next_run_at)}`:"");
+    return `<div class="task-card">
+      <div class="task-name">${esc(nameMap[t.name]||t.name)}</div>
+      <span class="task-status ${sc}">${esc(t.status||"idle")}</span>
+      <div class="task-stats">
+        <span>运行 ${num(t.run_count)}</span><span>成功 ${num(t.success_count)}</span>
+        <span>失败 ${num(t.failure_count)}</span><span>${extra}</span>
+      </div>
+    </div>`;
+  }).join("");
+
+  // Rotate / CPA 401
+  const rotateEvents=rotateLog.recent_events||[];
+  const rotateStatus=rotateTask.status||"-";
+  const rotateRuns=Number.isFinite(+rotateTask.run_count)?`运行 ${num(rotateTask.run_count)}`:"-";
+  const rotateElapsedSeconds=rotateTask.is_running&&rotateTask.last_started_at
+    ? Math.max(0, Math.round((Date.now()-new Date(rotateTask.last_started_at).getTime())/1000))
+    : null;
+  const rotateMetaParts=[
+    rotateTask.is_running?"执行中":rotateStatus,
+    rotateTask.last_finished_at?`上次 ${dt(rotateTask.last_finished_at).split(" ").pop()||"-"}`:"",
+    !rotateTask.is_running&&rotateTask.next_run_at?`下次 ${dt(rotateTask.next_run_at).split(" ").pop()||"-"}`:"",
+    rotateRuns,
+  ].filter(Boolean);
+  $("rotate-meta").textContent=rotateMetaParts.join(" · ")||"-";
+  const rotateMainAfter=rotateTask.is_running
+    ? (d.cpa_count ?? rotateSummary.main_after ?? null)
+    : (rotateSummary.main_after ?? d.cpa_count ?? null);
+  const rotateMainBefore=rotateSummary.main_before ?? rotateMainAfter ?? null;
+  const rotateProbeSkipped=rotateSummary.quota_probe_skipped ?? 0;
+  const rotateProbe429=rotateSummary.quota_probe_429 ?? 0;
+  const rotateDurationText=rotateTask.is_running
+    ? `${num(rotateElapsedSeconds)}s`
+    : `${rotateTask.last_duration_seconds ?? "-"}s`;
+  $("rotate-grid").innerHTML=[
+    heroMini("401删除", num(rotateSummary.deleted_401), `主池 ${num(rotateMainBefore)} → ${num(rotateMainAfter)}`),
+    heroMini("quota探测", num(rotateSummary.quota_probed), `probe401 ${num(rotateSummary.quota_probe_401)}`),
+    heroMini("probe429", num(rotateProbe429), `probe跳过 ${num(rotateProbeSkipped)}`),
+    heroMini("本轮耗时", rotateDurationText, `429 保留`),
+    heroMini("主池状态", num(rotateMainAfter), `当前 CPA ${num(d.cpa_count)}`),
+  ].join("");
+  $("rotate-log-wrap").innerHTML=rotateEvents.length
+    ? rotateEvents.slice(-10).reverse().map(line=>`<div class="compact-item">
+        <div class="line1">${esc((line.split("] ").slice(1).join("] "))||line)}</div>
+        <div class="line2">${esc(line.split("]")[0].replace("[","")||"-")}</div>
+      </div>`).join("")
+    : '<div class="empty">暂无 rotate 日志</div>';
+
+  // Storage / recent successes
+  const storageVisibleSuccesses=cumulativeSuccesses.slice(-24).reverse();
+  $("storage-success-meta").textContent=`${storageVisibleSuccesses.length} / ${cumulativeSuccesses.length} 条成功`;
+  $("storage-success-wrap").innerHTML=successList(storageVisibleSuccesses);
+  const nodes=pp.nodes||[];
+  $("proxy-meta").textContent=`${num(pp.node_count)} 节点 · ${num(pp.in_use_count)} 使用中`;
+  $("proxy-wrap").innerHTML=nodes.map(n=>{
+    const total=(n.successes||0)+(n.failures||0);
+    const ratio=total>0?Math.round((n.successes/total)*100):0;
+    const dotCls=n.disabled?"disabled":n.in_use?"active":"idle";
+    return `<div class="proxy-item">
+      <div class="proxy-dot ${dotCls}"></div>
+      <div class="proxy-name" title="${esc(n.name)}">${esc(n.name||"-")}</div>
+      <div class="proxy-bar"><div class="proxy-bar-fill" style="width:${ratio}%"></div></div>
+      <div class="proxy-ratio">${ratio}%</div>
+    </div>`;
+  }).join("")||'<div class="empty">暂无代理</div>';
+
+  // Files
+  $("file-meta").textContent=files[0]?`最近 ${ago(files[0].modified_at_iso)}`:"暂无";
+  const fmtSize=b=>{if(!Number.isFinite(+b))return"-";const kb=b/1024;return kb>=1024?(kb/1024).toFixed(1)+" MB":kb.toFixed(1)+" KB"};
+  $("file-wrap").innerHTML=files.slice(0,8).map(f=>`<div class="file-item">
+    <div class="file-name">${esc(f.name||"-")}</div>
+    <div class="file-meta"><strong>${fmtSize(f.size_bytes)}</strong> · ${dt(f.modified_at_iso)}</div>
+  </div>`).join("")||'<div class="empty">暂无记录</div>';
+
+  // Account survival
+  const survivalUpdated=survival.updated_at||survival.seeded_at||"";
+  const survivalSeedSource=survival.seed_source==="latest_generated_pool_files"?"最近生成样本":"固定历史样本";
+  const survivalProbeMode=survival.probe_mode==="responses"?"responses":"usage";
+  const survivalProbeLabel=survivalProbeMode==="responses"?"responses 探测":"usage 探测";
+  $("survival-meta").textContent=survival.available
+    ? `更新 ${dt(survivalUpdated)} · 固定 ${num(survivalSummary.tracked||0)} 个 · ${survivalSeedSource} · ${survivalProbeLabel}`
+    : "实验尚未初始化";
+  $("survival-grid").innerHTML=[
+    heroMini("追踪账户", num(survivalSummary.tracked), `alive ${num(survivalSummary.alive)}`),
+    heroMini("首次401", num(survivalSummary.first_invalid_count), `invalid ${num(survivalSummary.invalid)}`),
+    heroMini("传输异常", num(survivalSummary.transport_error), `suspicious ${num(survivalSummary.suspicious)}`),
+    heroMini("missing", num(survivalSummary.missing), `never probed ${num(survivalSummary.never_probed)}`),
+    heroMini("固定样本", survival.seeded_at?dt(survival.seeded_at).split(" ").pop():"-", `${survivalSeedSource} · cohort ${num(survival.cohort_size)}`),
+    heroMini("状态文件", survival.available?"ready":"missing", survival.path||"-"),
+  ].join("");
+  const survivalReseedBtn=$("survival-reseed-btn");
+  if(survivalReseedBtn){
+    survivalReseedBtn.style.display=survivalProbeMode==="responses"?"none":"inline-flex";
+  }
+  $("survival-changes-wrap").innerHTML=survivalChanges.length
+    ? survivalChanges.slice(-10).reverse().map(item=>`<div class="compact-item">
+        <div class="line1">${esc(item.email||"-")} · ${esc(item.from||"-")} → ${esc(item.to||"-")}</div>
+        <div class="line2">${esc(dt(item.probed_at))}${item.survival_seconds!=null?` · 存活 ${esc(item.survival_seconds+"s")}`:""}</div>
+      </div>`).join("")
+    : '<div class="empty">目前还没有状态变化</div>';
+  $("survival-members-meta").textContent=survivalMembers.length
+    ? `${survivalMembers.length} 个固定账户`
+    : "暂无 cohort";
+  $("survival-members-wrap").innerHTML=survivalMembers.length
+    ? `<table><thead><tr>
+        <th>邮箱</th><th>创建</th><th>最近探测</th><th>结果</th><th>首次401</th><th>存活时长</th><th>次数</th>
+      </tr></thead><tbody>${survivalMembers.map(m=>`
+        <tr>
+          <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(m.email||"-")}">${esc(m.email||"-")}</td>
+          <td class="mono">${esc(dt(m.created_at).split(" ").pop()||"-")}</td>
+          <td class="mono">${esc(dt(m.last_probe_at).split(" ").pop()||"-")}</td>
+          <td><span class="badge ${m.last_probe_category==='normal'?'badge-ok':(m.last_probe_category==='invalid'?'badge-fail':'badge-warn')}">${esc(m.last_probe_category||"never_probed")}</span></td>
+          <td class="mono">${esc(dt(m.first_invalid_at).split(" ").pop()||"-")}</td>
+          <td class="mono">${esc(m.survival_seconds!=null?`${m.survival_seconds}s`:"-")}</td>
+          <td class="mono">${esc(num(m.probe_count||0))}</td>
+        </tr>`).join("")}</tbody></table>`
+    : '<div class="empty">暂无固定追踪账户</div>';
+
+  // Runtime config
+  $("cfg-meta").textContent=runtimeState.updated_at_iso?`快照 ${ago(runtimeState.updated_at_iso)}`:"快照缺失";
+  $("cfg-wrap").innerHTML=[
+    kvItem("mail provider", reg.mail_provider||"-"),
+    kvItem("register proxy", reg.proxy||"none"),
+    kvItem("proxy pool", reg.proxy_pool_enabled?"enabled":"disabled"),
+    kvItem("runtime state", runtimeState.updated_at_iso||"missing"),
+    kvItem("state file", runtimeState.path||"-"),
+    kvItem("rotate interval", `${num(rt.rotate_interval||0)}s`),
+  ].join("");
+
+  // Burst registration plan
+  const burstIntervalSeconds=Number.isFinite(+burstPlan.interval_seconds)?+burstPlan.interval_seconds:0;
+  const burstIntervalText=burstIntervalSeconds>0
+    ? (burstIntervalSeconds%3600===0?`${num(burstIntervalSeconds/3600)}h`:`${(burstIntervalSeconds/3600).toFixed(1)}h`)
+    : "-";
+  $("plan-meta").textContent=burstPlan.mode==="burst"
+    ? `1 天约 ${num(burstPlan.accounts_per_day)} 个`
+    : "未配置";
+  $("plan-wrap").innerHTML=[
+    heroMini("模式", burstPlan.mode==="burst"?"批次注册":"-", "非 24h 常驻"),
+    heroMini("线程", num(burstPlan.threads), `单批 ${num(burstPlan.target_count)} 个`),
+    heroMini("批次间隔", burstIntervalText, `${num(burstPlan.batches_per_day)} 轮/天`),
+    heroMini("日产估算", num(burstPlan.accounts_per_day), `目标 ${compact(burstPlan.one_day_token_target)} tokens/day`),
+    heroMini("1 亿当日下限", num(burstPlan.accounts_needed_for_one_day_target), `单号周配额 ${compact(burstPlan.free_account_weekly_tokens)}`),
+    heroMini("1 亿可持续", num(burstPlan.accounts_needed_for_sustained_daily_target), `普号存活 ${esc(burstPlan.survival_window_hours||"-")}`),
+  ].join("");
+  if(latestSettings) renderSettings();
+}
+
+function heroMini(label, value, sub){
+  return `<div class="mini-card">
+    <div class="mini-label">${esc(label)}</div>
+    <div class="mini-value">${esc(value)}</div>
+    <div class="mini-sub">${esc(sub||"-")}</div>
+  </div>`;
+}
+
+function kvItem(key, value){
+  return `<div class="kv-item">
+    <div class="kv-key">${esc(key)}</div>
+    <div class="kv-val">${esc(value||"-")}</div>
+  </div>`;
+}
+
+function renderSettings(){
+  if(!latestSettings) return;
+  const settings=latestSettings;
+  const deps=latestDependencies||{};
+  const summary=latestSummary||{};
+  const rt=summary.runtime||{};
+  const regTask=(rt.task_states||[]).find(t=>t.name==="register")||{};
+  const regState=String(regTask.status||"").toLowerCase()==="scheduled" ? "已调度" : (settings.register.enabled ? "运行中" : "已停止");
+  const regTone=regState==="运行中" || regState==="已调度" ? "ok" : "warn";
+
+  applyModeVisibility(settings.mode);
+  $("settings-mode").textContent=settings.mode||"-";
+  setStatusPill("settings-register-state", regState, regTone);
+
+  $("settings-register-threads").value=settings.register.threads ?? "";
+  $("settings-register-provider").value=settings.register.mail_provider ?? "";
+  $("settings-register-batch-target").value=settings.register.batch_target_count ?? "";
+  $("settings-register-batch-interval").value=settings.register.batch_interval_seconds ?? "";
+  $("settings-register-proxy").value=settings.register.proxy ?? "";
+  $("settings-proxy-direct-urls").value=settings.proxy_pool.direct_urls ?? "";
+  $("settings-proxy-size").value=settings.proxy_pool.size ?? "";
+  $("settings-proxy-regions").value=settings.proxy_pool.regions ?? "";
+    $("settings-cpa-rotate-interval").value=settings.cpa.rotate_interval ?? "";
+  $("settings-proxy-meta").textContent=settings.proxy_pool.enabled?"已启用":"已关闭";
+  $("settings-cfmail-meta").textContent=settings.cfmail.configured?"已配置":"未配置";
+  $("settings-cpa-meta").textContent=settings.cpa.rotate_enabled?"rotate 已启用":"rotate 已关闭";
+  const cpaManageBtn=$("btn-cpa-manage");
+  if(cpaManageBtn){
+    const managementUrl=String(settings.cpa.management_url||"").trim();
+    cpaManageBtn.href=managementUrl||"#";
+    cpaManageBtn.style.pointerEvents=managementUrl?"auto":"none";
+    cpaManageBtn.style.opacity=managementUrl?"1":"0.5";
+    cpaManageBtn.setAttribute("aria-disabled", managementUrl?"false":"true");
+  }
+  $("settings-cfmail-grid").innerHTML=[
+    kvItem("configured", settings.cfmail.configured?"true":"false"),
+    kvItem("zone", settings.cfmail.zone_name||"-"),
+    kvItem("worker", settings.cfmail.worker_name||"-"),
+    kvItem("rotation window", settings.cfmail.rotation_window),
+    kvItem("blacklist threshold", settings.cfmail.rotation_blacklist_threshold),
+    kvItem("proxy config", settings.proxy_pool.config_path||"-"),
+  ].join("");
+
+  const depMap=[
+    ["cfmail", deps.cfmail, "dep-cfmail-status", "dep-cfmail-detail"],
+    ["proxy_pool", deps.proxy_pool, "dep-proxy-status", "dep-proxy-detail"],
+    ["cpa", deps.cpa, "dep-cpa-status", "dep-cpa-detail"],
+  ];
+  depMap.forEach(([name, payload, statusId, detailId])=>{
+    const info=payload||{};
+    let label="未加载";
+    let detail="-";
+    if(name==="proxy_pool" && info.total_nodes!=null){
+      detail=`${num(info.active_nodes)} / ${num(info.total_nodes)} 活跃`;
+    }else if(name==="cpa"){
+      detail=`management ${info.management_reachable?"ok":"fail"}${info.detail?` · ${info.detail}`:""}`;
+    }else{
+      detail=info.detail||"-";
+    }
+    if(info.status==="ok") label="在线";
+    else if(info.status==="error" || info.status==="unavailable") label="异常";
+    else if(info.status==="unconfigured") label="未配置";
+    setStatusPill(statusId, label, statusTone(info.status||label));
+    if($(detailId)) $(detailId).textContent=detail;
+  });
+}
+
+async function load(){
+  if(busy)return;
+  busy=1;
+  try{
+    const d=await grab();
+    latestSummary=d;
+    lastErr="";
+    $("alert").style.display="none";
+    render(d);
+  }catch(e){
+    const msg=String(e&&e.message?e.message:e);
+    if(msg!==lastErr){
+      $("alert").textContent="数据获取失败: "+msg;
+      $("alert").style.display="block";
+      lastErr=msg;
+    }
+  }finally{busy=0}
+}
+
+async function loadSettings(){
+  if(settingsBusy) return;
+  settingsBusy=1;
+  try{
+    const [settings, deps]=await Promise.all([
+      fetchJson(`${location.origin}/api/settings`),
+      fetchJson(`${location.origin}/api/health/dependencies`),
+    ]);
+    latestSettings=settings;
+    latestDependencies=deps;
+    renderSettings();
+  }catch(e){
+    const msg=String(e&&e.message?e.message:e);
+    showSettingsFeedback("Settings 加载失败: "+msg, "error");
+  }finally{
+    settingsBusy=0;
+  }
+}
+
+async function saveSettings(){
+  const payload={
+    "register.threads": Number($("settings-register-threads").value||1),
+    "register.batch_target_count": Number($("settings-register-batch-target").value||1),
+    "register.batch_interval_seconds": Number($("settings-register-batch-interval").value||60),
+    "register.mail_provider": $("settings-register-provider").value,
+    "register.proxy": $("settings-register-proxy").value,
+    "proxy_pool.size": Number($("settings-proxy-size").value||1),
+    "proxy_pool.direct_urls": $("settings-proxy-direct-urls").value,
+    "proxy_pool.regions": $("settings-proxy-regions").value,
+  };
+  if(latestSettings && latestSettings.mode!=="lite"){
+    payload["cpa.rotate_interval"]=Number($("settings-cpa-rotate-interval").value||1);
+  }
+  const r=await fetch(`${location.origin}/api/settings`,{
+    method:"PUT",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(payload),
+  });
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  latestSettings=await r.json();
+  renderSettings();
+  showSettingsFeedback(latestSettings.restart_required?"已保存. 部分配置需重启后完全生效.":"已保存.", "ok");
+  await load();
+  await loadSettings();
+}
+
+async function controlRegister(action){
+  const r=await fetch(`${location.origin}/api/control/register`,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({action}),
+  });
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  await r.json();
+  showSettingsFeedback(`注册循环已${action==="start"?"启动":(action==="stop"?"停止":"重启")}.`, "ok");
+  await load();
+  await loadSettings();
+}
+
+async function reseedSurvival(){
+  const btn=$("survival-reseed-btn");
+  if(!btn || btn.disabled) return;
+  const original=btn.textContent;
+  btn.disabled=true;
+  btn.textContent="重置中...";
+  try{
+    const r=await fetch(`${location.origin}/api/account-survival/reseed`,{method:"POST"});
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    lastErr="";
+    $("alert").style.display="none";
+    await load();
+  }catch(e){
+    const msg=String(e&&e.message?e.message:e);
+    $("alert").textContent="存活实验重置失败: "+msg;
+    $("alert").style.display="block";
+    lastErr=msg;
+  }finally{
+    btn.disabled=false;
+    btn.textContent=original;
+  }
+}
+
+document.addEventListener("click", e=>{
+  const saveBtn=e.target.closest("#settings-save-btn");
+  if(saveBtn){
+    saveSettings().catch(err=>{
+      showSettingsFeedback("保存失败: "+String(err&&err.message?err.message:err), "error");
+    });
+    return;
+  }
+  const registerBtn=e.target.closest("[data-register-action]");
+  if(registerBtn){
+    controlRegister(registerBtn.dataset.registerAction||"").catch(err=>{
+      showSettingsFeedback("控制失败: "+String(err&&err.message?err.message:err), "error");
+    });
+    return;
+  }
+  const survivalBtn=e.target.closest("#survival-reseed-btn");
+  if(survivalBtn){
+    reseedSurvival();
+    return;
+  }
+  const btn=e.target.closest(".nav-btn");
+  if(!btn) return;
+  const view=btn.dataset.view;
+  if(view && viewMap[view]) setActiveView(view);
+});
+
+window.addEventListener("hashchange", ()=>{
+  setActiveView(currentHashView(), {updateHash:false});
+});
+
+setActiveView(currentHashView(), {updateHash:false});
+load();
+setInterval(load,5000);
+})();
+</script>
+</body>
+</html>

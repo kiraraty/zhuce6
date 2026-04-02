@@ -1,0 +1,11 @@
+{
+  "accounts": [
+    {
+      "name": "example-mail",
+      "worker_domain": "email-api.example.com",
+      "email_domain": "mail.example.com",
+      "admin_password": "replace-me",
+      "enabled": true
+    }
+  ]
+}

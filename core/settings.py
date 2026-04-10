@@ -65,7 +65,7 @@ class AppSettings:
     rotate_probe_workers: int = 8
     # Registration loop settings
     register_enabled: bool = False
-    register_threads: int = 8
+    register_threads: int = 2
     register_interval: int = 5
     register_proxy: str | None = "http://127.0.0.1:7899"
     register_mail_provider: str = "cfmail"

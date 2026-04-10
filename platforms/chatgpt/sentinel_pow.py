@@ -41,52 +41,56 @@ class SentinelTokenGenerator:
         )
         perf_now = random.uniform(1000, 50000)
         time_origin = time.time() * 1000 - perf_now
-        nav_prop = random.choice(
-            [
-                "vendorSub",
-                "productSub",
-                "vendor",
-                "maxTouchPoints",
-                "scheduling",
-                "userActivation",
-                "doNotTrack",
-                "geolocation",
-                "connection",
-                "plugins",
-                "mimeTypes",
-                "pdfViewerEnabled",
-                "webkitTemporaryStorage",
-                "webkitPersistentStorage",
-                "hardwareConcurrency",
-                "cookieEnabled",
-                "credentials",
-                "mediaDevices",
-                "permissions",
-                "locks",
-                "ink",
-            ]
+        nav_props = list(
+            {
+                "vendorSub", "productSub", "vendor", "maxTouchPoints",
+                "scheduling", "userActivation", "doNotTrack", "geolocation",
+                "connection", "plugins", "mimeTypes", "pdfViewerEnabled",
+                "webkitTemporaryStorage", "webkitPersistentStorage",
+                "hardwareConcurrency", "cookieEnabled", "credentials",
+                "mediaDevices", "permissions", "locks", "ink",
+            }
         )
-        nav_val = f"{nav_prop}-undefined"
-        return [
-            "1920x1080",
-            now_str,
-            4294705152,
-            random.random(),
-            self.user_agent,
+        nav_prop = random.choice(nav_props)
+        nav_val = f"{nav_prop}\u2212undefined"
+        doc_keys = [
+            "location", "implementation", "URL", "documentURI", "compatMode",
+            "characterSet", "contentType", "doctype", "head", "body",
+        ]
+        win_keys = [
+            "Object", "Function", "Array", "Number", "parseFloat",
+            "undefined", "Infinity", "NaN", "isFinite", "isNaN",
+        ]
+        script_src = random.choice([
             "https://sentinel.openai.com/sentinel/20260124ceb8/sdk.js",
             None,
-            None,
-            "en-US",
-            "en-US,en",
-            random.random(),
-            nav_val,
-            random.choice(["location", "implementation", "URL", "documentURI", "compatMode"]),
-            random.choice(["Object", "Function", "Array", "Number", "parseFloat", "undefined"]),
-            perf_now,
-            self.sid,
-            "",
-            random.choice([4, 8, 12, 16]),
-            time_origin,
+        ])
+        return [
+            1920 + 1080,                                     # screen.width + screen.height
+            now_str,                                         # new Date()
+            4294705152,                                      # performance.memory.jsHeapSizeLimit
+            random.random(),                                 # Math.random()
+            self.user_agent,                                 # navigator.userAgent
+            script_src,                                      # R(scripts src)
+            None,                                            # script src match c/[^/]*/_
+            "en-US",                                         # navigator.language
+            "en-US,en",                                      # navigator.languages.join(",")
+            random.random(),                                 # Math.random()
+            nav_val,                                         # T() — random nav prop
+            random.choice(doc_keys),                         # R(Object.keys(document))
+            random.choice(win_keys),                         # R(Object.keys(window))
+            perf_now,                                        # performance.now()
+            self.sid,                                        # this.sid
+            "",                                              # URLSearchParams keys
+            random.choice([4, 8, 12, 16]),                   # navigator.hardwareConcurrency
+            time_origin,                                     # performance.timeOrigin
+            0,                                               # Number("ai" in window)
+            0,                                               # Number("createPRNG" in window)
+            0,                                               # Number("cache" in window)
+            0,                                               # Number("data" in window)
+            0,                                               # Number("solana" in window)
+            0,                                               # Number("dump" in window)
+            0,                                               # Number("InstallTrigger" in window)
         ]
 
     @staticmethod

@@ -64,6 +64,11 @@ from .register_otp import (
     _validate_verification_code,
     _wait_for_mailbox_code,
 )
+from .register_phone import (
+    _send_phone_otp,
+    _try_phone_verification,
+    _validate_phone_otp,
+)
 from .token_refresh import TokenRefreshManager
 
 logger = logging.getLogger(__name__)
@@ -141,8 +146,10 @@ class RegistrationEngine:
         task_uuid: str | None = None,
         mailbox_dedupe_store: MailboxDedupeProtocol | None = None,
         create_email_max_attempts: int = 5,
+        sms_provider: Any | None = None,
     ) -> None:
         self.email_service = email_service
+        self.sms_provider = sms_provider
         self.proxy_url = proxy_url
         self.callback_logger = callback_logger or (lambda message: logger.info(message))
         self.task_uuid = task_uuid
@@ -330,7 +337,7 @@ class RegistrationEngine:
                 self._otp_sent_at = time.time()
                 self._log("existing account flow: skipping password registration and otp send")
             else:
-                if not self._register_password():
+                if not self._register_password(device_id=device_id, sentinel_token=sentinel_token or ""):
                     return self._result(success=False, stage="password", error_message="password registration failed")
                 time.sleep(1)
                 if self.session is not None:
@@ -373,6 +380,8 @@ class RegistrationEngine:
             workspace_id = ""
             continue_url = ""
             callback_url = ""
+            if not token_info and post_create_gate == "add_phone":
+                token_info = self._try_phone_verification()
             if not token_info:
                 token_info = self._try_create_account_callback_session_token(post_create_continue_url)
             if not token_info:
@@ -472,6 +481,7 @@ class RegistrationEngine:
                     "create_account_error_message": self._last_create_account_error_message,
                     "post_create_gate": post_create_gate,
                     "post_create_continue_url": post_create_continue_url,
+                    "phone_number": str((token_info or {}).get("phone_number") or getattr(self, "_phone_verified_number", "") or ""),
                 },
                 source="login" if self._is_existing_account else "register",
             )
@@ -534,5 +544,8 @@ for _name, _func in {
     '_try_create_account_callback_session_token': _try_create_account_callback_session_token,
     '_try_direct_session_token': _try_direct_session_token,
     '_parse_session_jwt': _parse_session_jwt,
+    '_send_phone_otp': _send_phone_otp,
+    '_validate_phone_otp': _validate_phone_otp,
+    '_try_phone_verification': _try_phone_verification,
 }.items():
     setattr(RegistrationEngine, _name, _func)

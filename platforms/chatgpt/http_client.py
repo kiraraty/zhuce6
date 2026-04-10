@@ -18,6 +18,7 @@ from .constants import (
     OPENAI_USER_AGENT,
 )
 from .sentinel_pow import SentinelTokenGenerator
+from .sentinel_vm import execute_turnstile_dx
 
 logger = logging.getLogger(__name__)
 
@@ -101,9 +102,10 @@ class OpenAIHTTPClient(HTTPClient):
                 device_id=device_id,
                 user_agent=self.default_headers.get("User-Agent"),
             )
+            p_req_token = generator.generate_requirements_token()
             sen_req_body = json.dumps(
                 {
-                    "p": generator.generate_requirements_token(),
+                    "p": p_req_token,
                     "id": device_id,
                     "flow": resolved_flow,
                 },
@@ -137,9 +139,20 @@ class OpenAIHTTPClient(HTTPClient):
                     )
                 else:
                     p_value = generator.generate_requirements_token()
+                # Execute turnstile.dx JSVMP bytecode to get the 't' value
+                t_value = ""
+                turnstile_data = payload.get("turnstile") or {}
+                turnstile_dx = str(turnstile_data.get("dx") or "").strip() if isinstance(turnstile_data, dict) else ""
+                if turnstile_dx:
+                    t_result = execute_turnstile_dx(p_req_token, turnstile_dx)
+                    if t_result:
+                        t_value = t_result
+                        logger.debug("turnstile.dx execution succeeded: t_len=%d", len(t_value))
+                    else:
+                        logger.warning("turnstile.dx execution returned no result")
                 self._sentinel_payloads[(device_id, resolved_flow)] = {
                     "p": p_value,
-                    "t": "",
+                    "t": t_value,
                     "c": token,
                     "id": device_id,
                     "flow": resolved_flow,

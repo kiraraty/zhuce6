@@ -49,6 +49,8 @@ OPENAI_API_ENDPOINTS = {
     "create_account": "https://auth.openai.com/api/accounts/create_account",
     "select_workspace": "https://auth.openai.com/api/accounts/workspace/select",
     "select_organization": "https://auth.openai.com/api/accounts/organization/select",
+    "phone_otp_send": "https://auth.openai.com/api/accounts/add-phone/send",
+    "phone_otp_validate": "https://auth.openai.com/api/accounts/add-phone/validate",
 }
 
 OPENAI_PAGE_TYPES = {

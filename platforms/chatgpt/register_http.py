@@ -278,20 +278,28 @@ def _submit_signup_form(self, did: str, sen_token: str | None) -> SignupFormResu
         self._log(f"submit_signup_form failed: {exc}")
         return SignupFormResult(success=False, error_message=str(exc))
 
-def _register_password(self) -> bool:
+def _register_password(self, device_id: str = "", sentinel_token: str = "") -> bool:
     if self.session is None or not self.email:
         return False
     try:
         if not self.password:
             self.password = self._generate_password()
         payload = json.dumps({"password": self.password, "username": self.email})
+        headers = {
+            "referer": "https://auth.openai.com/create-account/password",
+            "accept": "application/json",
+            "content-type": "application/json",
+        }
+        if sentinel_token and device_id:
+            sentinel = self._build_sentinel_header(
+                sentinel_token,
+                device_id,
+                "authorize_continue",
+            )
+            headers["openai-sentinel-token"] = sentinel
         response = self.session.post(
             OPENAI_API_ENDPOINTS["register"],
-            headers={
-                "referer": "https://auth.openai.com/create-account/password",
-                "accept": "application/json",
-                "content-type": "application/json",
-            },
+            headers=headers,
             data=payload,
         )
         self._log(f"register password status: {response.status_code}")

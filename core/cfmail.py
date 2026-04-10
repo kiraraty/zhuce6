@@ -7,11 +7,32 @@ from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
+import email.header
 import re
+import random
 import secrets
 import threading
 import time
 from typing import Any
+
+_EMAIL_WORDS = [
+    "blue", "red", "green", "silver", "gold", "dark", "bright", "cool",
+    "sky", "star", "sun", "moon", "cloud", "rain", "snow", "wind",
+    "ocean", "river", "lake", "forest", "mountain", "valley", "field",
+    "wolf", "fox", "hawk", "eagle", "lion", "tiger", "bear", "deer",
+    "swift", "brave", "calm", "wild", "free", "true", "bold", "wise",
+    "code", "dev", "tech", "data", "pixel", "byte", "node", "stack",
+    "north", "south", "east", "west", "prime", "alpha", "beta", "nova",
+    "fire", "ice", "stone", "iron", "steel", "spark", "flash", "storm",
+    "amber", "jade", "coral", "pearl", "ruby", "onyx", "opal", "zinc",
+    "maple", "cedar", "birch", "aspen", "lotus", "ivy", "fern", "sage",
+    "echo", "drift", "haze", "mist", "dusk", "dawn", "glow", "vibe",
+    "jazz", "riff", "surf", "reef", "cove", "mesa", "ridge", "glen",
+    "max", "leo", "kai", "zoe", "sam", "eli", "mia", "ace",
+    "link", "page", "mark", "lane", "reed", "blake", "quinn", "logan",
+    "atlas", "orion", "lyra", "cleo", "felix", "hugo", "nina", "vera",
+    "neon", "retro", "cyber", "vapor", "sonic", "turbo", "hyper", "mega",
+]
 
 from curl_cffi import requests as cffi_requests
 
@@ -369,7 +390,16 @@ class CfMailMailbox(BaseMailbox):
                 f"cfmail account unavailable, current accounts: {self.manager.account_names()}"
             )
 
-        local = f"oc{secrets.token_hex(5)}"
+        words = random.sample(_EMAIL_WORDS, 3)
+        num = random.randint(0, 999)
+        local = random.choice([
+            f"{words[0]}_{words[1]}{num}",             # jade_storm42
+            f"{words[0]}{num}_{words[1]}",             # jade42_storm
+            f"{words[0]}_{words[1]}_{words[2]}",       # jade_storm_echo
+            f"{words[0]}_{words[1]}{num}{words[2]}",   # jade_storm42echo
+            f"{words[0]}{words[1]}_{num}",             # jadestorm_42
+            f"{words[0]}_{num}_{words[1]}",            # jade_42_storm
+        ])
         try:
             response = self._request_with_retry(
                 method="POST",
@@ -380,7 +410,7 @@ class CfMailMailbox(BaseMailbox):
                     **cfmail_headers(use_json=True),
                 },
                 json={
-                    "enablePrefix": True,
+                    "enablePrefix": False,
                     "name": local,
                     "domain": account.email_domain,
                 },
@@ -452,8 +482,9 @@ class CfMailMailbox(BaseMailbox):
         config_name = str(account.extra.get("config_name") or "").strip()
         mail_list_limit = self._mail_list_limit()
         patterns = [
-            r"Subject:\s*Your ChatGPT code is\s*(\d{6})",
             r"Your ChatGPT code is\s*(\d{6})",
+            r"ChatGPT\s*(?:代码|验证码)(?:为|是|：|:)\s*(\d{6})",
+            r"(?:code is|代码为|验证码)\s*(\d{6})",
             r"temporary verification code to continue:\s*(\d{6})",
             r"(?<!\d)(\d{6})(?!\d)",
         ]
@@ -535,9 +566,31 @@ class CfMailMailbox(BaseMailbox):
                     recipient = str(message.get("address") or "").strip().lower()
                     raw = str(message.get("raw") or "")
                     metadata_text = json.dumps(message.get("metadata") or {}, ensure_ascii=False)
-                    content = "\n".join([recipient, raw, metadata_text])
                     if recipient and recipient != email:
                         continue
+                    # Decode MIME Subject (may span multiple folded lines)
+                    decoded_subject = ""
+                    subject_match = re.search(
+                        r"^Subject:\s*((?:.*(?:\r?\n[ \t]+)?)*.*)$", raw, re.M
+                    )
+                    if subject_match:
+                        raw_subject = re.sub(r"\r?\n[ \t]+", " ", subject_match.group(1)).strip()
+                        try:
+                            parts = email.header.decode_header(raw_subject)
+                            decoded_subject = "".join(
+                                p.decode(enc or "utf-8") if isinstance(p, bytes) else str(p)
+                                for p, enc in parts
+                            )
+                        except Exception:
+                            decoded_subject = raw_subject
+                    # Body starts after the first blank line in the raw email
+                    body_start = -1
+                    for sep in ("\r\n\r\n", "\n\n"):
+                        body_start = raw.find(sep)
+                        if body_start >= 0:
+                            break
+                    mail_body = raw[body_start:] if body_start >= 0 else raw
+                    content = "\n".join([recipient, decoded_subject, mail_body, metadata_text])
                     if keyword and keyword.lower() not in content.lower():
                         continue
                     for pattern in patterns:

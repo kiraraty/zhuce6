@@ -76,6 +76,35 @@ class ChatGPTPlatform(BasePlatform):
             return self.mailbox
         return create_mailbox(provider_name, proxy=self.config.proxy if self.config else None)
 
+    def _get_sms_provider(self) -> Any:
+        import os
+        provider = str(os.getenv("ZHUCE6_SMS_PROVIDER", "5sim") or "5sim").strip().lower()
+        if provider == "5sim":
+            api_key = str(os.getenv("ZHUCE6_5SIM_API_KEY", "") or "").strip()
+            if not api_key:
+                return None
+            from platforms.chatgpt.sms_provider_5sim import FiveSimProvider, RotatingFiveSimProvider
+            countries_raw = str(os.getenv("ZHUCE6_5SIM_COUNTRIES", "") or "").strip()
+            operator = str(os.getenv("ZHUCE6_5SIM_OPERATOR", "any") or "any").strip()
+            if countries_raw and "," in countries_raw:
+                # Comma-separated list: use rotating provider
+                countries = [c.strip() for c in countries_raw.split(",") if c.strip()]
+                return RotatingFiveSimProvider(api_key=api_key, countries=countries, operator=operator)
+            # Single country (backwards-compatible)
+            country = str(os.getenv("ZHUCE6_5SIM_COUNTRY", "any") or "any").strip()
+            return FiveSimProvider(api_key=api_key, country=country, operator=operator)
+        # fallback: herosms
+        api_key = str(os.getenv("ZHUCE6_HEROSMS_API_KEY", "") or "").strip()
+        if not api_key:
+            return None
+        from platforms.chatgpt.sms_provider import HeroSMSProvider
+        country_id = int(str(os.getenv("ZHUCE6_HEROSMS_COUNTRY_ID", "4") or "4").strip() or "4")
+        return HeroSMSProvider(
+            api_key=api_key,
+            country_id=country_id,
+            proxy=self.config.proxy if self.config else None,
+        )
+
     def _run_registration(self, email: str | None = None, password: str | None = None) -> dict[str, Any]:
         from platforms.chatgpt.register import RegistrationEngine
 
@@ -89,6 +118,7 @@ class ChatGPTPlatform(BasePlatform):
             email_service=MailboxEmailServiceAdapter(mailbox),
             proxy_url=self.config.proxy if self.config else None,
             mailbox_dedupe_store=mailbox_dedupe_store,
+            sms_provider=self._get_sms_provider(),
         )
         if email:
             engine.email = email
@@ -112,6 +142,7 @@ class ChatGPTPlatform(BasePlatform):
             email_service=MailboxEmailServiceAdapter(mailbox),
             proxy_url=self.config.proxy if self.config else None,
             mailbox_dedupe_store=mailbox_dedupe_store,
+            sms_provider=self._get_sms_provider(),
         )
         if email:
             engine.email = email
@@ -144,6 +175,7 @@ class ChatGPTPlatform(BasePlatform):
             email_service=MailboxEmailServiceAdapter(mailbox),
             proxy_url=self.config.proxy if self.config else None,
             mailbox_dedupe_store=mailbox_dedupe_store,
+            sms_provider=self._get_sms_provider(),
         )
         if email:
             engine.email = email
